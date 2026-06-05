@@ -254,6 +254,14 @@ npx expo install @react-native-async-storage/async-storage
 
 ```txt
 https://github.com/marina-2907/areslife-mobile.git
+
+```
+
+## Link do Video 
+
+```txt
+https://youtu.be/Rl2GAqV5bUU
+
 ```
 
 ## Link do Video 
