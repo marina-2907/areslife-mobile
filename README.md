@@ -12,11 +12,13 @@ Aplicativo mobile desenvolvido em **React Native + Expo + TypeScript** para simu
 | Mateus Granja dos Santos      | RM 564930 |
 | Vitória Valentina Maglio      | RM 563509 |
 
-## Repositório
+## Repositórios
 
-```txt
+**Repositório da entrega/Classroom:**  
+https://github.com/2TDSPX/global-solution-areslife.git
+
+**Repositório pessoal:**  
 https://github.com/marina-2907/areslife-mobile.git
-```
 
 ## Sobre o projeto
 
