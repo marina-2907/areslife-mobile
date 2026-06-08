@@ -1,8 +1,8 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -17,90 +17,81 @@ import {
 
 import SpaceBackground from "../../components/SpaceBackground";
 import { colors } from "../../constants/colors";
-import { Tourist, TouristStatus } from "../../types/tourist";
+import { createTourist } from "../../services/api";
+import { TouristStatus } from "../../types/tourist";
 
-const STORAGE_KEY = "@areslife:tourists";
 const statusOptions: TouristStatus[] = ["Seguro", "Atenção", "Crítico"];
+
+// Destinos aceitos pela API Java (enum Localizacao)
+const destinoOptions = ["Marte", "Lua"];
 
 export default function CreateTouristScreen() {
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [nationality, setNationality] = useState("");
-  const [origin, setOrigin] = useState("Terra");
   const [destination, setDestination] = useState("Marte");
-  const [missionType, setMissionType] = useState("");
-  const [healthStatus, setHealthStatus] = useState("Estável");
-  const [ticketStatus, setTicketStatus] = useState("Pendente");
   const [status, setStatus] = useState<TouristStatus>("Seguro");
   const [oxygenLevel, setOxygenLevel] = useState("");
   const [heartRate, setHeartRate] = useState("");
   const [missionDays, setMissionDays] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit() {
+    // Validações dos campos que a API realmente exige
     if (!name.trim()) {
       Alert.alert("Atenção", "Informe o nome do turista.");
       return;
     }
-
-    if (!age.trim()) {
-      Alert.alert("Atenção", "Informe a idade do turista.");
+    const ageNum = Number(age);
+    if (!age.trim() || isNaN(ageNum) || ageNum < 18 || ageNum > 99) {
+      Alert.alert("Atenção", "Informe uma idade válida (entre 18 e 99 anos).");
       return;
     }
-
-    if (Number.isNaN(Number(age)) || Number(age) <= 0) {
-      Alert.alert("Atenção", "Informe uma idade válida.");
-      return;
-    }
-
     if (!nationality.trim()) {
       Alert.alert("Atenção", "Informe a nacionalidade do turista.");
       return;
     }
 
-    if (!missionType.trim()) {
-      Alert.alert("Atenção", "Informe o tipo de missão.");
-      return;
-    }
-
-    const newTourist: Tourist = {
-      id: String(Date.now()),
-      name: name.trim(),
-      age: Number(age),
-      nationality: nationality.trim(),
-      origin: origin.trim() || "Terra",
-      destination: destination.trim() || "Marte",
-      missionType: missionType.trim(),
-      healthStatus: healthStatus.trim() || "Estável",
-      ticketStatus: ticketStatus.trim() || "Pendente",
-      status,
-      oxygenLevel: Number(oxygenLevel) || 0,
-      heartRate: Number(heartRate) || 0,
-      missionDays: Number(missionDays) || 0,
-    };
-
+    setLoading(true);
     try {
-      const storedTourists = await AsyncStorage.getItem(STORAGE_KEY);
-      const currentTourists: Tourist[] = storedTourists
-        ? JSON.parse(storedTourists)
-        : [];
+      await createTourist({
+        name:        name.trim(),
+        age:         ageNum,
+        nationality: nationality.trim(),
+        origin:      "Terra",
+        destination: destination,   // "Marte" ou "Lua" — mapTouristToApi converte para enum
+        missionType: "Turismo espacial",
+        healthStatus: "Estável",
+        ticketStatus: "Pendente",
+        status,
+        oxygenLevel: Number(oxygenLevel) || 95,
+        heartRate:   Number(heartRate)   || 80,
+        missionDays: Number(missionDays) || 0,
+      });
 
-      const updatedTourists = [...currentTourists, newTourist];
-
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTourists));
-
-      Alert.alert("Sucesso", "Turista cadastrado com sucesso!", [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
+      Alert.alert("Sucesso", "Turista cadastrado com sucesso! ✅", [
+        { text: "OK", onPress: () => router.back() },
       ]);
-    } catch (error) {
-      Alert.alert("Erro", "Não foi possível salvar o turista.");
-    }
+    } catch (error: any) {
+      // Extrai a mensagem mais útil possível do erro
+      const apiMsg =
+        error?.response?.data?.message ??
+        error?.response?.data?.erro ??
+        error?.response?.data ??
+        null;
+      const httpStatus = error?.response?.status;
+      const msg =
+        typeof apiMsg === "string"
+          ? apiMsg
+          : httpStatus
+          ? `Erro ${httpStatus} — verifique os dados e tente novamente.`
+          : error?.message ?? "Não foi possível conectar à API.";
 
-    // Depois, quando a API estiver pronta:
-    // await createTourist(newTourist);
-    // router.back();
+      console.error("[CreateTourist] Erro:", JSON.stringify(error?.response?.data));
+      Alert.alert("Erro ao salvar", String(msg));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -135,7 +126,7 @@ export default function CreateTouristScreen() {
               <Text style={styles.sectionTitle}>Dados pessoais</Text>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Nome completo</Text>
+                <Text style={styles.label}>Nome completo *</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Ex: Laura Mendes"
@@ -147,7 +138,7 @@ export default function CreateTouristScreen() {
 
               <View style={styles.row}>
                 <View style={styles.half}>
-                  <Text style={styles.label}>Idade</Text>
+                  <Text style={styles.label}>Idade *</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="Ex: 28"
@@ -159,7 +150,7 @@ export default function CreateTouristScreen() {
                 </View>
 
                 <View style={styles.half}>
-                  <Text style={styles.label}>Nacionalidade</Text>
+                  <Text style={styles.label}>Nacionalidade *</Text>
                   <TextInput
                     style={styles.input}
                     placeholder="Ex: Brasil"
@@ -172,62 +163,39 @@ export default function CreateTouristScreen() {
 
               <Text style={styles.sectionTitle}>Dados da missão</Text>
 
+              {/* Origem fixa = Terra */}
               <View style={styles.row}>
                 <View style={styles.half}>
                   <Text style={styles.label}>Origem</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ex: Terra"
-                    placeholderTextColor={colors.textSecondary}
-                    value={origin}
-                    onChangeText={setOrigin}
-                  />
+                  <View style={styles.fixedField}>
+                    <Text style={styles.fixedFieldText}>Terra</Text>
+                  </View>
                 </View>
 
+                {/* Destino: seletor entre Marte e Lua */}
                 <View style={styles.half}>
-                  <Text style={styles.label}>Destino</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ex: Marte"
-                    placeholderTextColor={colors.textSecondary}
-                    value={destination}
-                    onChangeText={setDestination}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Tipo de missão</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Ex: Turismo espacial"
-                  placeholderTextColor={colors.textSecondary}
-                  value={missionType}
-                  onChangeText={setMissionType}
-                />
-              </View>
-
-              <View style={styles.row}>
-                <View style={styles.half}>
-                  <Text style={styles.label}>Status de saúde</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ex: Estável"
-                    placeholderTextColor={colors.textSecondary}
-                    value={healthStatus}
-                    onChangeText={setHealthStatus}
-                  />
-                </View>
-
-                <View style={styles.half}>
-                  <Text style={styles.label}>Bilhete</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ex: Confirmado"
-                    placeholderTextColor={colors.textSecondary}
-                    value={ticketStatus}
-                    onChangeText={setTicketStatus}
-                  />
+                  <Text style={styles.label}>Destino *</Text>
+                  <View style={styles.destinoRow}>
+                    {destinoOptions.map((opt) => (
+                      <Pressable
+                        key={opt}
+                        style={[
+                          styles.destinoChip,
+                          destination === opt && styles.destinoChipActive,
+                        ]}
+                        onPress={() => setDestination(opt)}
+                      >
+                        <Text
+                          style={[
+                            styles.destinoChipText,
+                            destination === opt && styles.destinoChipTextActive,
+                          ]}
+                        >
+                          {opt}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
               </View>
 
@@ -235,11 +203,9 @@ export default function CreateTouristScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Status geral</Text>
-
                 <View style={styles.statusOptions}>
                   {statusOptions.map((option) => {
                     const isActive = status === option;
-
                     return (
                       <Pressable
                         key={option}
@@ -304,9 +270,19 @@ export default function CreateTouristScreen() {
               </View>
             </View>
 
-            <Pressable style={styles.saveButton} onPress={handleSubmit}>
-              <Ionicons name="save-outline" size={20} color={colors.text} />
-              <Text style={styles.saveButtonText}>Salvar turista</Text>
+            <Pressable
+              style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.text} />
+              ) : (
+                <>
+                  <Ionicons name="save-outline" size={20} color={colors.text} />
+                  <Text style={styles.saveButtonText}>Salvar turista</Text>
+                </>
+              )}
             </Pressable>
 
             <Pressable style={styles.cancelButton} onPress={() => router.back()}>
@@ -320,177 +296,42 @@ export default function CreateTouristScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-    overflow: "hidden",
-  },
-  keyboard: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "transparent",
-  },
-  content: {
-    paddingHorizontal: 22,
-    paddingTop: 28,
-    paddingBottom: 34,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
-    marginBottom: 22,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: colors.card,
-    borderWidth: 1.2,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTextBox: {
-    flex: 1,
-  },
-  eyebrow: {
-    color: colors.secondary,
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.5,
-    marginBottom: 5,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: "900",
-    lineHeight: 34,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    marginTop: 5,
-    lineHeight: 20,
-  },
-  formCard: {
-    backgroundColor: colors.card,
-    borderRadius: 26,
-    borderWidth: 1.3,
-    borderColor: colors.borderPurple,
-    padding: 18,
-    marginBottom: 18,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: "900",
-    marginBottom: 14,
-    marginTop: 4,
-  },
-  inputGroup: {
-    marginBottom: 14,
-  },
-  label: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 7,
-  },
-  input: {
-    minHeight: 50,
-    backgroundColor: colors.cardSoft,
-    borderWidth: 1.2,
-    borderColor: colors.border,
-    color: colors.text,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    fontSize: 14,
-  },
-  row: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
-  },
-  half: {
-    flex: 1,
-  },
-  third: {
-    flex: 1,
-  },
-  statusOptions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statusChip: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 14,
-    backgroundColor: colors.cardSoft,
-    borderWidth: 1.2,
-    borderColor: colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statusChipActive: {
-    borderColor: colors.success,
-    backgroundColor: "rgba(52, 211, 153, 0.14)",
-  },
-  statusChipWarning: {
-    borderColor: colors.warning,
-  },
-  statusChipDanger: {
-    borderColor: colors.danger,
-  },
-  statusChipText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  statusChipTextActive: {
-    color: colors.text,
-  },
-  saveButton: {
-    minHeight: 56,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 8,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.32,
-    shadowRadius: 14,
-    elevation: 6,
-  },
-  saveButtonText: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: "900",
-  },
-  cancelButton: {
-    minHeight: 52,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-    borderWidth: 1.2,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  cancelButtonText: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: "800",
-  },
+  safe:               { flex: 1, backgroundColor: colors.background },
+  screen:             { flex: 1, backgroundColor: colors.background, overflow: "hidden" },
+  keyboard:           { flex: 1 },
+  container:          { flex: 1, backgroundColor: "transparent" },
+  content:            { paddingHorizontal: 22, paddingTop: 28, paddingBottom: 34 },
+  header:             { flexDirection: "row", alignItems: "flex-start", gap: 14, marginBottom: 22 },
+  backButton:         { width: 44, height: 44, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1.2, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  headerTextBox:      { flex: 1 },
+  eyebrow:            { color: colors.secondary, fontSize: 11, fontWeight: "900", letterSpacing: 1.5, marginBottom: 5 },
+  title:              { color: colors.text, fontSize: 28, fontWeight: "900", lineHeight: 34 },
+  subtitle:           { color: colors.textSecondary, fontSize: 14, marginTop: 5, lineHeight: 20 },
+  formCard:           { backgroundColor: colors.card, borderRadius: 26, borderWidth: 1.3, borderColor: colors.borderPurple, padding: 18, marginBottom: 18, shadowColor: colors.primary, shadowOpacity: 0.18, shadowRadius: 16, elevation: 6 },
+  sectionTitle:       { color: colors.text, fontSize: 17, fontWeight: "900", marginBottom: 14, marginTop: 4 },
+  inputGroup:         { marginBottom: 14 },
+  label:              { color: colors.textSecondary, fontSize: 12, fontWeight: "800", marginBottom: 7 },
+  input:              { minHeight: 50, backgroundColor: colors.cardSoft, borderWidth: 1.2, borderColor: colors.border, color: colors.text, paddingHorizontal: 14, borderRadius: 16, fontSize: 14 },
+  row:                { flexDirection: "row", gap: 10, marginBottom: 14 },
+  half:               { flex: 1 },
+  third:              { flex: 1 },
+  fixedField:         { minHeight: 50, backgroundColor: colors.cardSoft, borderWidth: 1.2, borderColor: colors.border, borderRadius: 16, paddingHorizontal: 14, justifyContent: "center", opacity: 0.6 },
+  fixedFieldText:     { color: colors.text, fontSize: 14 },
+  destinoRow:         { flexDirection: "row", gap: 6 },
+  destinoChip:        { flex: 1, minHeight: 50, borderRadius: 14, backgroundColor: colors.cardSoft, borderWidth: 1.2, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  destinoChipActive:  { borderColor: colors.primary, backgroundColor: "rgba(139, 92, 246, 0.18)" },
+  destinoChipText:    { color: colors.textSecondary, fontSize: 13, fontWeight: "800" },
+  destinoChipTextActive: { color: colors.text },
+  statusOptions:      { flexDirection: "row", gap: 8 },
+  statusChip:         { flex: 1, minHeight: 44, borderRadius: 14, backgroundColor: colors.cardSoft, borderWidth: 1.2, borderColor: colors.border, alignItems: "center", justifyContent: "center" },
+  statusChipActive:   { borderColor: colors.success, backgroundColor: "rgba(52, 211, 153, 0.14)" },
+  statusChipWarning:  { borderColor: colors.warning },
+  statusChipDanger:   { borderColor: colors.danger },
+  statusChipText:     { color: colors.textSecondary, fontSize: 12, fontWeight: "900" },
+  statusChipTextActive: { color: colors.text },
+  saveButton:         { minHeight: 56, borderRadius: 18, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, shadowColor: colors.primary, shadowOpacity: 0.32, shadowRadius: 14, elevation: 6 },
+  saveButtonDisabled: { opacity: 0.6 },
+  saveButtonText:     { color: colors.text, fontSize: 15, fontWeight: "900" },
+  cancelButton:       { minHeight: 52, borderRadius: 18, alignItems: "center", justifyContent: "center", marginTop: 12, borderWidth: 1.2, borderColor: colors.border, backgroundColor: colors.card },
+  cancelButtonText:   { color: colors.textSecondary, fontSize: 14, fontWeight: "800" },
 });
