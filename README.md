@@ -1,6 +1,10 @@
-# AresLife Mobile 
+# AresLife Mobile
 
 Aplicativo mobile desenvolvido em **React Native + Expo + TypeScript** para simular o gerenciamento de uma colônia em Marte, com foco em turismo espacial, monitoramento de recursos vitais, controle de visitantes e alertas inteligentes.
+
+O projeto possui integração com **API REST**, permitindo que o aplicativo mobile se comunique com o back-end para consultar, cadastrar, pesquisar e excluir dados dos turistas espaciais.
+
+---
 
 ## Integrantes
 
@@ -12,21 +16,33 @@ Aplicativo mobile desenvolvido em **React Native + Expo + TypeScript** para simu
 | Mateus Granja dos Santos      | RM 564930 |
 | Vitória Valentina Maglio      | RM 563509 |
 
+---
+
 ## Repositórios
 
-**Repositório da entrega/Classroom:**  
+**Repositório da entrega/Classroom:**
 https://github.com/2TDSPX/global-solution-areslife.git
 
-**Repositório pessoal:**  
+**Repositório pessoal:**
 https://github.com/marina-2907/areslife-mobile.git
+
+---
+
+## Link do vídeo
+
+https://youtu.be/Rl2GAqV5bUU
+
+---
 
 ## Sobre o projeto
 
-O **AresLife Mobile** é um aplicativo criado para apoiar a proposta da solução AresLife, uma plataforma de simulação de colonização de Marte e turismo espacial.
+O **AresLife Mobile** é um aplicativo criado para apoiar a proposta da solução **AresLife**, uma plataforma de simulação de colonização de Marte e turismo espacial.
 
-A ideia do projeto é representar como um sistema mobile poderia auxiliar no controle de uma base marciana, permitindo o acompanhamento de recursos essenciais, turistas espaciais e alertas operacionais do habitat.
+A ideia do projeto é representar como um sistema mobile poderia auxiliar no controle de uma base marciana, permitindo o acompanhamento de recursos essenciais, turistas espaciais, dados operacionais e alertas inteligentes do habitat.
 
 O aplicativo possui uma interface futurista, com tema inspirado no espaço sideral, fundo escuro, elementos visuais neon, cards informativos e navegação inferior entre as principais telas.
+
+---
 
 ## Objetivo da solução
 
@@ -40,7 +56,10 @@ A aplicação permite visualizar informações importantes da colônia, como:
 * temperatura do habitat;
 * turistas espaciais cadastrados;
 * status de saúde dos visitantes;
+* dados de missão;
 * alertas inteligentes sobre riscos da missão.
+
+---
 
 ## Tecnologias utilizadas
 
@@ -48,9 +67,12 @@ A aplicação permite visualizar informações importantes da colônia, como:
 * Expo
 * TypeScript
 * Expo Router
-* AsyncStorage
+* API REST
+* Requisições HTTP
 * Ionicons
 * Git e GitHub
+
+---
 
 ## Funcionalidades implementadas
 
@@ -59,12 +81,16 @@ A aplicação permite visualizar informações importantes da colônia, como:
 * Dashboard da colônia;
 * Exibição de recursos vitais do habitat;
 * Listagem de turistas espaciais;
-* Cadastro local de novos turistas;
+* Cadastro de novos turistas;
 * Busca de turistas pelo nome;
-* Exclusão local de turistas;
+* Exclusão de turistas;
+* Visualização de dados de missão;
+* Visualização do status de saúde dos visitantes;
 * Alertas inteligentes baseados nos dados dos turistas e da colônia;
-* Armazenamento local com AsyncStorage;
-* Estrutura preparada para integração futura com API REST.
+* Integração com API REST;
+* Consumo de dados do back-end.
+
+---
 
 ## Telas do aplicativo
 
@@ -75,6 +101,8 @@ Tela inicial do aplicativo, com acesso rápido para:
 * Dashboard da Colônia;
 * Turistas Espaciais;
 * Alertas Inteligentes.
+
+---
 
 ### Dashboard da Colônia
 
@@ -91,6 +119,8 @@ Recursos exibidos:
 * produção;
 * eficiência geral.
 
+---
+
 ### Turistas Espaciais
 
 Tela responsável pelo controle dos visitantes da colônia.
@@ -103,6 +133,8 @@ Funcionalidades:
 * visualizar dados de missão;
 * visualizar status de saúde;
 * excluir turistas.
+
+---
 
 ### Cadastro de Turistas
 
@@ -123,6 +155,8 @@ Dados cadastrados:
 * batimentos cardíacos;
 * dias de missão.
 
+---
+
 ### Alertas Inteligentes
 
 Tela responsável por gerar alertas automáticos com base nos dados cadastrados.
@@ -136,6 +170,33 @@ Exemplos de alertas:
 * turista em status crítico;
 * batimentos cardíacos elevados;
 * bilhete pendente.
+
+---
+
+## Integração com API REST
+
+Atualmente, o aplicativo utiliza uma **API REST** para realizar a comunicação entre o front-end mobile e o back-end do projeto.
+
+Essa integração permite que os dados dos turistas sejam consultados, cadastrados, pesquisados e excluídos por meio de requisições HTTP, deixando o aplicativo mais próximo de uma solução real.
+
+Funcionalidades usando a API REST:
+
+* carregar turistas cadastrados;
+* cadastrar novo turista;
+* pesquisar turista;
+* excluir turista;
+* consumir dados do back-end;
+* utilizar dados dos turistas para gerar alertas inteligentes.
+
+A comunicação com a API está centralizada no arquivo:
+
+```txt
+src/services/api.ts
+```
+
+Para que a integração funcione corretamente, a API utilizada pelo projeto deve estar em execução e acessível pelo aplicativo.
+
+---
 
 ## Modelo de dados
 
@@ -161,19 +222,7 @@ export type Tourist = {
 };
 ```
 
-## Armazenamento local
-
-Atualmente, o aplicativo utiliza **AsyncStorage** para salvar os turistas localmente.
-
-Isso permite que o app funcione mesmo antes da integração com a API, simulando um CRUD básico no próprio dispositivo.
-
-Funcionalidades usando AsyncStorage:
-
-* carregar turistas cadastrados;
-* salvar novo turista;
-* pesquisar turista;
-* excluir turista;
-* utilizar dados dos turistas para gerar alertas inteligentes.
+---
 
 ## Estrutura de pastas
 
@@ -207,6 +256,8 @@ areslife-mobile
 ├── package.json
 └── README.md
 ```
+
+---
 
 ## Como executar o projeto
 
@@ -242,33 +293,36 @@ No terminal do Expo, pressione:
 a
 ```
 
-Ou utilize o aplicativo **Expo Go** para escanear o QR Code.
+Ou utilize o aplicativo **Expo Go** para escanear o QR Code exibido no terminal.
 
-## Dependência importante
+---
 
-Caso o AsyncStorage não esteja instalado, execute:
+## Observação sobre a API
+
+Para que o aplicativo funcione com a integração, é necessário que a **API REST** esteja rodando corretamente.
+
+Verifique se a URL da API está configurada no arquivo:
+
+```txt
+src/services/api.ts
+```
+
+Caso esteja utilizando emulador Android, é importante conferir se o endereço da API está acessível pelo emulador.
+
+---
+
+## Observação sobre dependências
+
+A pasta `node_modules` não deve ser enviada para o GitHub, pois ela é gerada automaticamente ao executar:
 
 ```bash
-npx expo install @react-native-async-storage/async-storage
+npm install
 ```
 
-## Link do projeto
+---
 
-```txt
-https://github.com/marina-2907/areslife-mobile.git
+## Entrega
 
-```
+Este projeto foi desenvolvido para a disciplina **Mobile Application Development**, como parte da Global Solution, com o objetivo de apresentar uma solução mobile integrada a uma API REST para simulação de gerenciamento de uma colônia em Marte.
 
-## Link do Video 
-
-```txt
-https://youtu.be/Rl2GAqV5bUU
-
-```
-
-## Link do Video 
-
-```txt
-https://youtu.be/Rl2GAqV5bUU
-```
 
